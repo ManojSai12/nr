@@ -1,0 +1,86 @@
+import os
+import numpy as np
+from skimage import io
+
+# Define the directories for weighted and binary mask images
+weighted_images_directory = "C:\\Users\\Manoj\\Desktop\\weighted_bm_imgs\\jan_ocean_portion.TIFF"
+binary_mask_directory = "C:\\Users\\Manoj\\Desktop\\b"
+
+# Create a dictionary to store the counts for each year
+yearly_counts = {year: 0 for year in range(2000, 2024)}
+
+# Iterate through the years (2000 to 2023)
+for year in range(2000, 2024):
+    # Iterate through the months (jan, feb, ..., dec)
+    for month in ['jan']:
+        # Construct the paths for the weighted and binary mask images
+        weighted_image_path = os.path.join(weighted_images_directory)
+        binary_mask_path = os.path.join(binary_mask_directory, f"modified_{month}{year}_mask.TIFF")
+
+        try:
+            # Load the images using skimage
+            weighted_image = io.imread(weighted_image_path)
+            binary_mask_image = io.imread(binary_mask_path)
+
+            # Ensure that the dimensions of the images match
+            if weighted_image.shape == binary_mask_image.shape:
+                # Count the number of matching pixels with a value of 0
+                matching_pixels = (weighted_image == 0) & (binary_mask_image == 0)
+                yearly_counts[year] += np.count_nonzero(matching_pixels)
+            else:
+                print(f"Image dimensions do not match for {year}-{month}, skipping...")
+        except FileNotFoundError:
+            print(f"Images not found for {year}-{month}, skipping...")
+
+# Display the count of matching pixels (0s) for each year
+for year, count in yearly_counts.items():
+    print(f"Year {year}: Count of matching pixels (0s) = {count}")
+
+
+
+-----------------------------------------------------------------------------------------------------------------
+import os
+import numpy as np
+from skimage import io
+
+# Specify the directory where your binary mask images are stored
+root_directory = "C:\\Users\\Manoj\\Desktop\\b"
+months = ['dec']
+
+# Create a dictionary to store the counts for each year
+yearly_counts = {year: 0 for year in range(2000, 2024)}
+
+# Iterate through the years (2000 to 2023)
+for year in range(2000, 2024):
+    for month in months:
+        # Construct the paths for the weighted and binary mask images
+        weighted_image_path = os.path.join(weighted_images_directory)
+        binary_mask_path = os.path.join(binary_mask_directory, f"modified_{month}{year}_mask.TIFF")
+
+        try:
+            # Load the images using skimage
+            weighted_image = io.imread(weighted_image_path)
+            binary_mask_image = io.imread(binary_mask_path)
+
+            # Ensure that the dimensions of the images match
+            if weighted_image.shape == binary_mask_image.shape:
+                # Iterate through each pixel position
+                for x in range(weighted_image.shape[0]):
+                    for y in range(weighted_image.shape[1]):
+                        # Check if the pixel values are both 0
+                        if weighted_image[x, y] == 0 and binary_mask_image[x, y] == 0:
+                            yearly_counts[year] += 1
+            else:
+                print(f"Image dimensions do not match for {year}-{month}, skipping...")
+        except FileNotFoundError:
+            print(f"Images not found for {year}-{month}, skipping...")
+
+# Display the count of matching pixels (0s) for each year
+for year, count in yearly_counts.items():
+    print(f"Year {year}: Count of matching pixels (0s) = {count}")
+
+
+
+
+
+
