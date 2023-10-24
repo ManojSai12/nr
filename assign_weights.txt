@@ -1,0 +1,61 @@
+import os
+import numpy as np
+from skimage import io
+from skimage.color import rgb2gray
+
+# Specify the directory where your binary mask images are stored
+root_directory = "C:\\Users\\Manoj\\Desktop\\bm_imgs"
+
+# Define the weights for each year (2000 to 2023)
+weights = {year: 1 for year in range(2000, 2024)}
+
+# Initialize an empty array for the final weighted sum result
+weighted_sum = None
+
+# Number of years to consider for the threshold
+years_to_consider = 10
+
+for year in range(2000, 2024):
+    for month in range(1, 13):  # Iterate through months (January to December)
+        # Construct the filename for each month and year
+        filename = f"{month}_{year}_mask.TIFF"  # Adjust the file extension as needed
+        image_path = os.path.join(root_directory, filename)
+
+        # Try to load the mask image, and if it fails, continue to the next month
+        try:
+            mask = io.imread(image_path)
+        except FileNotFoundError:
+            print(f"Image not found for {filename}. Skipping...")
+            continue
+
+        # Ensure that the dimensions of the images match
+        if mask is not None:
+            # Convert the image to grayscale
+            mask = rgb2gray(mask)
+
+            # Initialize or update the weighted sum
+            if weighted_sum is None:
+                weighted_sum = mask * weights[year]
+            else:
+                weighted_sum += mask * weights[year]
+
+# Calculate the threshold value as the sum of weighted values of the last 10 years
+if year >= 2014:  # Considering the period from 2014 to 2023 (10 years)
+    threshold_value = sum([weights[y] for y in range(year - years_to_consider + 1, year + 1)])
+
+# Create a binary image where cloud-free pixels are 0
+binary_weighted_map = np.zeros_like(weighted_sum)
+
+# Set the pixels classified as cloud-free to 0
+binary_weighted_map[weighted_sum < threshold_value] = 0
+
+# Set the pixels classified as cloudy to 255
+binary_weighted_map[weighted_sum >= threshold_value] = 255
+
+# Define the path to save the binary weighted map
+binary_weighted_map_path = "C:\\Users\\Manoj\\Desktop\\binary_weighted_image.TIFF"
+
+# Save the binary weighted map as a TIFF image
+io.imsave(binary_weighted_map_path, binary_weighted_map)
+
+print(f"Binary weighted image saved to {binary_weighted_map_path}")
