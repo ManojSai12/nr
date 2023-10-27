@@ -1,0 +1,53 @@
+import os
+import numpy as np
+from skimage import io
+
+# Specify the directory where your binary mask images are stored
+root_directory = "C:\\Users\\Manoj\\Desktop\\b"
+months = ['dec']
+
+# Define the weights for each year (2000 to 2023)
+weights = {year: 1 for year in range(2000, 2024)}
+
+# Initialize two empty arrays
+# One for the weighted sum of pixel values other than 128
+# And the other for the sum of pixel values of 128
+weighted_sum_other_than_128 = None
+weighted_sum_128 = None
+
+# Number of years to consider for the threshold
+years_to_consider = 10
+
+for year in range(2000, 2024):
+    for month in months:
+        # Construct the filename for each month and year
+        filename = f"modified_{month}{year}_mask.TIFF"  # Adjust the file extension as needed
+        image_path = os.path.join(root_directory, filename)
+
+        # Try to load the mask image, and if it fails, continue to the next month
+        try:
+            mask = np.array(io.imread(image_path))
+        except FileNotFoundError:
+            print(f"Image not found for {filename}. Skipping...")
+            continue
+
+        # Initialize or update the weighted sum of pixel values other than 128
+        if weighted_sum_other_than_128 is None:
+            weighted_sum_other_than_128 = mask[mask != 128] * weights[year]
+        else:
+            weighted_sum_other_than_128 += mask[mask != 128] * weights[year]
+
+        # Initialize or update the weighted sum of pixel values of 128
+        if weighted_sum_128 is None:
+            weighted_sum_128 = mask[mask == 128]
+        else:
+            weighted_sum_128 += mask[mask == 128]
+
+    # Calculate the threshold value as the sum of weighted values of the last 10 years
+    if year >= 2014:  # Considering the period from 2014 to 2023 (10 years)
+        threshold_value = sum([weights[y] for y in range(year - years_to_consider + 1, year + 1)])
+
+# Add the weighted sum of pixel values of 128 to the weighted sum of pixel values other than 128
+weighted_sum = weighted_sum_other_than_128 + weighted_sum_128
+
+print(threshold_value)
