@@ -1,0 +1,69 @@
+import os
+import numpy as np
+from skimage import io
+import matplotlib.pyplot as plt
+from numpy import savetxt
+root_directory = "C:\\Users\\lahari_k\\Desktop\\binary_mask_imgs_without_ant"
+
+weights = {year: 1 for year in range(2000, 2012)}
+months=['nov']
+weighted_sum = np.zeros((360, 720))
+for year in range(2000, 2012):
+   
+    for month in months:  
+       
+        filename = f"modified_{month}{year}_mask.TIFF"  
+        image_path = os.path.join(root_directory, filename)
+     
+        try:
+            mask = io.imread(image_path)
+        except FileNotFoundError:
+            print(f"Image not found for {filename}. Skipping...")
+            continue
+       
+        # if mask is not None and mask.shape == (360, 720): 
+           
+        if np.any(mask):
+             if np.any(mask) == 128:
+                 weighted_sum = 128
+             # if weighted_sum is None:
+                
+             #     weighted_sum = mask * weights[year]
+             else:
+               weighted_sum += mask * weights[year]
+print(weighted_sum)
+print(np.max(weighted_sum))        
+threshold_value = 255*5
+
+cloudy_area=weighted_sum >= threshold_value
+
+(binary_map)=np.zeros_like(weighted_sum)
+binary_map[cloudy_area] = 255
+binary_map[cloudy_area]
+b_img=io.imsave(f"{month}_2000-2011.TIFF",np.int8(binary_map))   
+
+print(np.max(binary_map))
+print(np.min(binary_map))
+                
+if cloudy_area is not None:
+    count_t = np.count_nonzero(cloudy_area == 1)
+    count_f = np.count_nonzero(cloudy_area == 0)
+    print(f"Number of True Values = {count_t}")
+    print(f"Number of False Values ={count_f}")
+    
+print(type(weighted_sum))
+    
+
+
+# print(weighted_sum)
+# distribution=plt.hist(weighted_sum)
+# plt.show(distribution)
+
+
+                
+        
+
+    
+
+
+
