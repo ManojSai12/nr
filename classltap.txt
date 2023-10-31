@@ -1,0 +1,57 @@
+import os
+import numpy as np
+from skimage import io
+from skimage.color import rgb2gray
+
+class CloudDetection:
+    def __init__(self, root_directory, output_directory):
+        self.root_directory = root_directory
+        self.output_directory = output_directory
+        self.months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+        self.weighted_images = {}
+
+    def process_month(self, month):
+        weighted_sum = None
+
+        # Automatically determine the range of years based on available data
+        min_year = 2000
+        max_year = 2023  # Adjust this based on the available data
+
+        for year in range(min_year, max_year + 1):
+            filename = f"modified_{month}{year}_mask.TIFF"
+            image_path = os.path.join(self.root_directory, filename)
+
+            try:
+                mask = io.imread(image_path)
+                mask = rgb2gray(mask)
+                weighted = mask
+
+                if weighted_sum is None:
+                    weighted_sum = weighted
+                else:
+                    weighted_sum += weighted
+            except FileNotFoundError:
+                print(f"Image not found for {filename}. Skipping...")
+
+        return weighted_sum
+
+    def save_weighted_images(self):
+        for month, weighted_image in self.weighted_images.items():
+            filename = f"weighted_image_{month}.TIFF"
+            io.imsave(os.path.join(self.output_directory, filename), weighted_image)
+
+    def run(self):
+        for month in self.months:
+            weighted_image = self.process_month(month)
+            self.weighted_images[month] = weighted_image
+
+        # Save the weighted images
+        self.save_weighted_images()
+
+
+if __name__ == "__main__":
+    root_directory = "C:\\Users\\Manoj\\Desktop\\b"
+    output_directory = "C:\\Users\\Manoj\\Desktop\\weighted_images"
+
+    cloud_detection = CloudDetection(root_directory, output_directory)
+    cloud_detection.run()
