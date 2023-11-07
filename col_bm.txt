@@ -1,0 +1,47 @@
+import os
+from skimage import io
+import numpy as np
+
+# Define the directory where your color images are stored
+input_directory = "E:\\color_images"
+
+# Define the directory where you want to save the binary masks
+output_directory = "E:\\NRSC_Project"
+
+# Ensure the output directory exists, or create it if it doesn't
+if not os.path.exists(output_directory):
+    os.makedirs(output_directory)
+
+# List all files in the input directory
+image_files = os.listdir(input_directory)
+
+# Define color ranges for cloud-free and cloudy regions
+# You may need to adjust these ranges to match your specific image colors
+cloud_free_colors = [((0, 100, 0), (0, 255, 0)), ((0, 0, 128), (0, 0, 255))]  # Define the green and blue ranges
+cloudy_colors = [((0, 0, 0), (0, 100, 0)), ((128, 0, 0), (255, 0, 0))]    # Define the black and red ranges
+
+# Process each color image
+for image_file in image_files:
+    # Load the color image
+    color_image = io.imread(os.path.join(input_directory, image_file))
+
+    # Create a binary mask based on color classification
+    binary_mask = np.zeros(color_image.shape[:2], dtype=np.uint8)
+
+    # Classify cloud-free regions
+    for (lower, upper) in cloud_free_colors:
+        mask = np.all((color_image >= lower) & (color_image <= upper), axis=-1)
+        binary_mask[mask] = 255
+
+    # Classify cloudy regions
+    for (lower, upper) in cloudy_colors:
+        mask = np.all((color_image >= lower) & (color_image <= upper), axis=-1)
+        binary_mask[mask] = 128  # Set as 128 for "cloudy" regions
+
+    # Save the binary mask image to the output directory with the same filename
+    output_file = os.path.join(output_directory, image_file)
+    io.imsave(output_file, binary_mask)
+
+    print(f"Converted and saved {image_file}")
+
+print("All images converted and saved.")
