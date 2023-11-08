@@ -1,0 +1,79 @@
+import os
+from skimage import io, color, img_as_ubyte
+import numpy as np
+import pandas as pd
+
+class ImageProcessor:
+    def __init__(self, color_image_directory, processed_image_directory, weighted_image_directory, ocean_mask_path, antarctica_mask_path, years):
+        self.color_image_directory = color_image_directory
+        self.processed_image_directory = processed_image_directory
+        self.weighted_image_directory = weighted_image_directory
+        self.ocean_mask = io.imread(ocean_mask_path)
+        self.antarctica_mask = io.imread(antarctica_mask_path)
+        self.years = years
+
+    def convert_color_to_binary(self, threshold=100):
+        for year in self.years:
+            for month in ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']:
+                image_path = os.path.join(self.color_image_directory, f"{month}{year}.TIFF")
+                if os.path.exists(image_path):
+                    color_image = io.imread(image_path)
+                    grayscale_image = color.rgb2gray(color_image)
+                    binary_image = img_as_ubyte(grayscale_image > threshold)
+                    processed_image_path = os.path.join(self.processed_image_directory, f"{month}_{year}_binary.TIFF")
+                    io.imsave(processed_image_path, binary_image)
+
+    def apply_weights_and_compare(self, weight_threshold=255 * 10):
+        for year in self.years:
+            weighted_sum = np.zeros((360, 720))
+            for month in ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']:
+                image_path = os.path.join(self.processed_image_directory, f"{month}_{year}_binary.TIFF")
+                if os.path.exists(image_path):
+                    binary_image = io.imread(image_path)
+                    weighted_sum += binary_image
+            thresholded_sum = weighted_sum >= weight_threshold
+            processed_image_path = os.path.join(self.weighted_image_directory, f"{year}_weighted.TIFF")
+            io.imsave(processed_image_path, img_as_ubyte(thresholded_sum))
+
+    def remove_antarctica(self, start_row=300, end_row=360):
+        for year in self.years:
+            image_path = os.path.join(self.weighted_image_directory, f"{year}_weighted.TIFF")
+            if os.path.exists(image_path):
+                weighted_image = io.imread(image_path)
+                weighted_image[start_row:end_row, :] = 0
+                processed_image_path = os.path.join(self.weighted_image_directory, f"{year}_weighted_no_antarctica.TIFF")
+                io.imsave(processed_image_path, weighted_image)
+
+    def count_non_matching_pixels(self):
+        results = []
+        for year in self.years:
+            weighted_image_path = os.path.join(self.weighted_image_directory, f"{year}_weighted_no_antarctica.TIFF")
+            binary_mask_path = os.path.join(self.processed_image_directory, f"jan_{year}_binary.TIFF")
+            if os.path.exists(weighted_image_path) and os.path.exists(binary_mask_path):
+                weighted_image = io.imread(weighted_image_path)
+                binary_mask = io.imread(binary_mask_path)
+                non_matching_pixels = np.count_nonzero(weighted_image != binary_mask)
+                results.append({"Year": year, "NonMatchingPixels": non_matching_pixels})
+        df = pd.DataFrame(results)
+        df.to_csv("non_matching_pixels.csv", index=False)
+
+    def save_results(self):
+        # Your code to save results in CSV or other formats here
+
+def main():
+    color_image_directory = "color_images_folder"
+    processed_image_directory = "processed_images_folder"
+    weighted_image_directory = "weighted_images_folder"
+    ocean_mask_path = "ocean_mask.png"
+    antarctica_mask_path = "antarctica_mask.png"
+    years = [2000, 2001, 2002, 2003]  # Add the years for your images
+
+    processor = ImageProcessor(color_image_directory, processed_image_directory, weighted_image_directory, ocean_mask_path, antarctica_mask_path, years)
+    processor.convert_color_to_binary()
+    processor.apply_weights_and_compare()
+    processor.remove_antarctica()
+    processor.count_non_matching_pixels()
+    processor.save_results()
+
+if __name__ == "__main__":
+    main()
