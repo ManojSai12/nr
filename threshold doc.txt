@@ -1,0 +1,31 @@
+Image Thresholding for Cloud Detection
+To distinguish between cloudy and cloud-free areas in satellite imagery, a crucial step involves converting the grayscale images into binary masks. This process is achieved through image thresholding, where pixel intensity values are compared against predefined thresholds.
+
+Threshold Definition:
+Threshold 10:
+
+Pixels with intensity values less than or equal to 10 are classified as cloud-free, while values above 10 are considered cloudy.
+Threshold 20:
+
+Intensities below or equal to 20 indicate cloud-free regions, whereas intensities above 20 suggest the presence of clouds.
+Threshold 30:
+
+Cloud-free areas are identified by intensities below or equal to 30, while intensities exceeding 30 are indicative of cloudy regions.
+Methodology:
+Grayscale to Binary Conversion:
+
+The initial grayscale satellite images, stored in TIFF format, are subjected to thresholding to create binary masks.
+Threshold Application:
+
+The three defined thresholds (10, 20, 30) are applied to the grayscale images independently, resulting in three binary masks representing different interpretations of cloudiness.
+Binary Mask Characteristics:
+
+In each binary mask, pixel values are binary, with '0' representing cloud-free areas and '1' denoting cloudy regions.
+Flexibility and Sensitivity:
+
+By utilizing multiple thresholds, the approach introduces flexibility and sensitivity in detecting varying degrees of cloud cover. Lower thresholds might identify subtle cloud formations, while higher thresholds focus on denser cloud cover.
+Example:
+Consider the following pseudo code for thresholding:
+
+
+These binary masks become valuable inputs for subsequent stages of the cloud detection process.
